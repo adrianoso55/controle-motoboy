@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Motoboy Pro - Controle de Ganhos e Gastos</title>
+    <!-- Web App / PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk1vdG9ib3kgUHJvIC0gQ29udHJvbGUgZGUgR2FuaG9zIiwKICAic2hvcnRfbmFtZSI6ICJNb3RvYm95UHJvIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjE3MmEiLAogICJ0aGVtZV9jb2xvciI6ICIjMGYxNzJhIgp9">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        },
+                        ifood: '#ea1d2c',
+                        u99: '#ffa100',
+                        uber: '#000000',
+                        outros: '#3b82f6'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for standard icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, select, textarea {
+            user-select: text;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col pb-20 md:pb-6">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 sticky top-0 z-30 px-4 py-3">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-orange-600 to-amber-500 p-2.5 rounded-xl text-white shadow-lg shadow-orange-500/20">
+                    <i class="fa-solid fa-motorcycle text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg leading-tight tracking-wide text-white flex items-center gap-2">
+                        MOTOBOY <span class="text-orange-500">PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Controle de Ganhos & KM</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openPwaModal()" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-amber-400 text-xs font-semibold rounded-lg border border-amber-500/30 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <span class="hidden sm:inline">Baixar App</span>
+                </button>
+                <button onclick="openSettingsModal()" class="p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition" title="Configurações e Backup">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-4xl mx-auto w-full px-4 pt-4 flex-1">
+
+        <!-- Quick Summary Header Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 shadow-sm">
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">Faturamento</span>
+                <span id="quick-ganhos" class="text-lg sm:text-xl font-bold text-emerald-400">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 shadow-sm">
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">Gastos Totais</span>
+                <span id="quick-gastos" class="text-lg sm:text-xl font-bold text-rose-400">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 shadow-sm">
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">Lucro Líquido</span>
+                <span id="quick-lucro" class="text-lg sm:text-xl font-bold text-amber-400">R$ 0,00</span>
+            </div>
+            <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-3.5 shadow-sm">
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">Custo por KM</span>
+                <span id="quick-custokm" class="text-lg sm:text-xl font-bold text-cyan-400">R$ 0,00/km</span>
+            </div>
+        </div>
+
+        <!-- Tab Navigation Switcher -->
+        <div class="flex rounded-xl bg-slate-800/80 p-1 border border-slate-700 mb-6">
+            <button id="tab-btn-add" onclick="switchTab('add')" class="flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 bg-orange-600 text-white shadow">
+                <i class="fa-solid fa-plus-circle"></i>
+                <span>Novo Dia</span>
+            </button>
+            <button id="tab-btn-reports" onclick="switchTab('reports')" class="flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Relatórios</span>
+            </button>
+            <button id="tab-btn-history" onclick="switchTab('history')" class="flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Histórico</span>
+            </button>
+        </div>
+
+        <!-- SECTION 1: FORM - NOVO DIA -->
+        <section id="section-add" class="space-y-5">
+            <form id="daily-form" onsubmit="handleFormPreSubmit(event)" class="space-y-5">
+                
+                <!-- Data do Registro -->
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        <i class="fa-regular fa-calendar-days text-orange-500 mr-1"></i> Data da Rodada
+                    </label>
+                    <input type="date" id="input-date" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-orange-500 text-base">
+                </div>
+
+                <!-- Section: Ganhos por Plataforma -->
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-wallet text-emerald-400"></i> Ganhos por Plataforma
+                        </h2>
+                        <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full font-semibold border border-emerald-500/20" id="form-total-ganhos-badge">
+                            R$ 0,00
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- iFood -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-red-600/20 text-red-500 flex items-center justify-center font-black text-sm">iF</div>
+                                <span class="text-sm font-semibold text-slate-200">iFood</span>
+                            </div>
+                            <div class="relative w-36">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="ganho-ifood" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- 99 -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center font-black text-sm">99</div>
+                                <span class="text-sm font-semibold text-slate-200">99 Moto / Food</span>
+                            </div>
+                            <div class="relative w-36">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="ganho-99" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Uber -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-slate-700 text-white flex items-center justify-center font-black text-sm">Ub</div>
+                                <span class="text-sm font-semibold text-slate-200">Uber Moto / Eats</span>
+                            </div>
+                            <div class="relative w-36">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="ganho-uber" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Outros / Particular -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-sm">Out</div>
+                                <span class="text-sm font-semibold text-slate-200">Outros / Particular</span>
+                            </div>
+                            <div class="relative w-36">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="ganho-outros" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Controle de Quilometragem (KM) -->
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-high text-cyan-400"></i> Quilometragem do Dia
+                        </h2>
+                        <span class="text-xs bg-cyan-500/10 text-cyan-400 px-2.5 py-1 rounded-full font-semibold border border-cyan-500/20" id="form-total-km-badge">
+                            0 KM
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 font-medium mb-1.5">KM Inicial (Saída)</label>
+                            <input type="number" step="0.1" id="km-inicial" placeholder="Ex: 45000" oninput="calculateFormTotals()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-base focus:border-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 font-medium mb-1.5">KM Final (Chegada)</label>
+                            <input type="number" step="0.1" id="km-final" placeholder="Ex: 45180" oninput="calculateFormTotals()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold text-base focus:border-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <p id="km-validation-warning" class="text-xs text-rose-400 hidden font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i> O KM final deve ser maior ou igual ao KM inicial!
+                    </p>
+                </div>
+
+                <!-- Section: Gastos / Despesas -->
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gas-pump text-rose-400"></i> Gastos do Dia
+                        </h2>
+                        <span class="text-xs bg-rose-500/10 text-rose-400 px-2.5 py-1 rounded-full font-semibold border border-rose-500/20" id="form-total-gastos-badge">
+                            R$ 0,00
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Combustivel -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <span class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-gas-pump text-amber-500 text-xs"></i> Gasolina / ÁLcool
+                            </span>
+                            <div class="relative w-32">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="gasto-combustivel" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Alimentacao -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <span class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-utensils text-emerald-500 text-xs"></i> Alimentação / Lanche
+                            </span>
+                            <div class="relative w-32">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="gasto-alimentacao" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Manutençao -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <span class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-wrench text-blue-400 text-xs"></i> Manutenção / Oficina
+                            </span>
+                            <div class="relative w-32">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="gasto-manutencao" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Outros Gastos -->
+                        <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                            <span class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-receipt text-purple-400 text-xs"></i> Outros Gastos
+                            </span>
+                            <div class="relative w-32">
+                                <span class="absolute left-3 top-2.5 text-xs text-slate-500">R$</span>
+                                <input type="number" step="0.01" min="0" id="gasto-outros" placeholder="0,00" oninput="calculateFormTotals()" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-2 py-2 text-right text-white font-bold text-sm focus:border-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações adicionais -->
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        <i class="fa-regular fa-note-sticky text-slate-400 mr-1"></i> Anotações do dia (Opcional)
+                    </label>
+                    <input type="text" id="input-notes" placeholder="Ex: Chuva forte a noite, Pneu furou..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-200 text-sm focus:border-orange-500 focus:outline-none">
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full py-4 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-extrabold rounded-2xl shadow-lg shadow-orange-600/30 text-lg transition active:scale-[0.98] flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>SALVAR RODADA DO DIA</span>
+                </button>
+            </form>
+        </section>
+
+
+        <!-- SECTION 2: REPORTS & ANALYTICS -->
+        <section id="section-reports" class="hidden space-y-5">
+            <!-- Filter Pills -->
+            <div class="flex flex-wrap gap-2 pb-1 overflow-x-auto">
+                <button onclick="setReportPeriod('today')" id="period-today" class="period-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-orange-600 text-white">Hoje</button>
+                <button onclick="setReportPeriod('week')" id="period-week" class="period-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-300 hover:bg-slate-700">Esta Semana</button>
+                <button onclick="setReportPeriod('month')" id="period-month" class="period-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-300 hover:bg-slate-700">Este Mês</button>
+                <button onclick="setReportPeriod('year')" id="period-year" class="period-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-300 hover:bg-slate-700">Este Ano</button>
+                <button onclick="setReportPeriod('all')" id="period-all" class="period-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-300 hover:bg-slate-700">Tudo</button>
+            </div>
+
+            <!-- Key Metric Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                    <div class="text-xs text-slate-400 font-medium">Ganhos Totais</div>
+                    <div id="rep-total-ganhos" class="text-xl font-extrabold text-emerald-400 mt-1">R$ 0,00</div>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                    <div class="text-xs text-slate-400 font-medium">Gastos Totais</div>
+                    <div id="rep-total-gastos" class="text-xl font-extrabold text-rose-400 mt-1">R$ 0,00</div>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl col-span-2 md:col-span-1">
+                    <div class="text-xs text-slate-400 font-medium">Lucro Líquido Real</div>
+                    <div id="rep-lucro-liquido" class="text-2xl font-black text-amber-400 mt-1">R$ 0,00</div>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                    <div class="text-xs text-slate-400 font-medium">KM Percorridos</div>
+                    <div id="rep-total-km" class="text-xl font-extrabold text-cyan-400 mt-1">0 km</div>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl">
+                    <div class="text-xs text-slate-400 font-medium">Custo por KM</div>
+                    <div id="rep-custo-km" class="text-xl font-extrabold text-slate-200 mt-1">R$ 0,00</div>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 p-4 rounded-2xl col-span-2 md:col-span-1">
+                    <div class="text-xs text-slate-400 font-medium">Melhor App</div>
+                    <div id="rep-best-platform" class="text-lg font-bold text-orange-400 mt-1">-</div>
+                </div>
+            </div>
+
+            <!-- Share Report Button -->
+            <div class="flex gap-2">
+                <button onclick="shareWhatsAppReport()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition text-sm">
+                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                    <span>Compartilhar Resumo no Zap</span>
+                </button>
+            </div>
+
+            <!-- Charts Container -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Chart 1: Platform breakdown -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-orange-500"></i> Divisão por App / Plataforma
+                    </h3>
+                    <div class="relative h-52 flex items-center justify-center">
+                        <canvas id="chart-platforms"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Expenses breakdown -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+                    <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-rose-400"></i> Divisão dos Gastos
+                    </h3>
+                    <div class="relative h-52 flex items-center justify-center">
+                        <canvas id="chart-expenses"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Financial Bar Chart -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 md:col-span-2">
+                    <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-amber-400"></i> Desempenho Financeiro
+                    </h3>
+                    <div class="relative h-60">
+                        <canvas id="chart-timeline"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- SECTION 3: HISTÓRICO DE LOGS -->
+        <section id="section-history" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-base font-bold text-slate-200">Histórico de Registros</h2>
+                <span id="history-count" class="text-xs font-semibold bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">0 dias gravados</span>
+            </div>
+
+            <div id="history-list" class="space-y-3">
+                <!-- Dynamic cards injected via JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: CONFIRMAÇÃO ANTES DE ENVIAR (MANDATORY REQUIREMENT) -->
+    <div id="modal-confirm" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check text-orange-500 text-lg"></i> Confirmar Dados do Dia
+                </h3>
+                <button onclick="closeConfirmModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-400">
+                Confira o resumo da sua rodada antes de gravar definitivamente:
+            </p>
+
+            <div class="space-y-2 bg-slate-800/80 rounded-2xl p-3.5 border border-slate-700 text-sm">
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Data:</span>
+                    <span id="conf-date" class="font-bold text-slate-200">--</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Total Ganhos:</span>
+                    <span id="conf-ganhos" class="font-bold text-emerald-400">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">Total Gastos:</span>
+                    <span id="conf-gastos" class="font-bold text-rose-400">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50 bg-slate-900/50 p-2 rounded-xl">
+                    <span class="text-slate-300 font-medium">Lucro Líquido:</span>
+                    <span id="conf-lucro" class="font-extrabold text-amber-400 text-base">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-700/50">
+                    <span class="text-slate-400">KM Rodados:</span>
+                    <span id="conf-km" class="font-bold text-cyan-400">0 km</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-slate-400">Custo por KM:</span>
+                    <span id="conf-custokm" class="font-bold text-slate-200">R$ 0,00/km</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="closeConfirmModal()" class="py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm transition">
+                    Ajustar Dados
+                </button>
+                <button onclick="commitSaveDay()" class="py-3 bg-orange-600 hover:bg-orange-500 text-white font-extrabold rounded-xl text-sm transition shadow-lg shadow-orange-600/30 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Confirmar e Salvar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL 2: AJUSTES / BACKUP / GERAR EXEMPLOS -->
+    <div id="modal-settings" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-slate-400"></i> Opções e Backup
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Generate Demo Data -->
+                <button onclick="generateSampleData()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Gerar Dados de Exemplo (Para Testar)</span>
+                </button>
+
+                <!-- Export CSV / Backup -->
+                <button onclick="exportCSV()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-file-csv text-emerald-400"></i>
+                    <span>Exportar Relatório em CSV (Excel)</span>
+                </button>
+
+                <!-- Backup JSON -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportJSON()" class="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-download"></i> Backup (JSON)
+                    </button>
+                    <label class="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition cursor-pointer">
+                        <i class="fa-solid fa-upload"></i> Restaurar (JSON)
+                        <input type="file" accept=".json" onchange="importJSON(event)" class="hidden">
+                    </label>
+                </div>
+
+                <!-- Clear Data -->
+                <button onclick="clearAllData()" class="w-full py-2.5 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 text-rose-400 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition mt-4">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Apagar Todos os Dados</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL 3: INSTRUÇÕES PARA INSTALAR ANDROID (PWA/GALERA) -->
+    <div id="modal-pwa" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-3xl p-5 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen-button text-amber-500"></i> Como Instalar no Android
+                </h3>
+                <button onclick="closePwaModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Você pode usar este sistema como um aplicativo real no seu celular, sem precisar baixar da Play Store!
+            </p>
+
+            <div class="space-y-3 text-xs text-slate-300 bg-slate-800/60 p-4 rounded-2xl border border-slate-700">
+                <div class="flex items-start gap-3">
+                    <div class="w-6 h-6 rounded-full bg-orange-600/30 text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">1</div>
+                    <p>Abra este site no navegador **Chrome** do seu celular Android.</p>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-6 h-6 rounded-full bg-orange-600/30 text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">2</div>
+                    <p>Toque nos **3 pontinhos** no canto superior direito do Chrome.</p>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="w-6 h-6 rounded-full bg-orange-600/30 text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">3</div>
+                    <p>Selecione **"Adicionar à Tela inicial"** ou **"Instalar aplicativo"**.</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-400 text-center">
+                Pronto! O ícone do **Motoboy Pro** vai ficar na sua tela junto com os outros apps.
+            </p>
+
+            <button onclick="closePwaModal()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-sm transition">
+                Entendido!
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-semibold hidden items-center gap-2 z-50 transition-all duration-300">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-orange-500"></i>
+        <span id="toast-msg">Mensagem</span>
+    </div>
+
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Storage Key
+        const STORAGE_KEY = 'motoboy_pro_records_v1';
+
+        // App State
+        let records = [];
+        let pendingRecord = null;
+        let currentPeriod = 'today';
+        let platformChartInstance = null;
+        let expenseChartInstance = null;
+        let timelineChartInstance = null;
+
+        // Initialize App
+        window.onload = function() {
+            // Set default date input to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('input-date').value = today;
+
+            // Load records from LocalStorage
+            loadRecords();
+
+            // Initial Calculations & UI Render
+            calculateFormTotals();
+            updateQuickStats();
+            renderHistory();
+        };
+
+        // Load records from LocalStorage
+        function loadRecords() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                records = stored ? JSON.parse(stored) : [];
+                // Sort by date descending
+                records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } catch (e) {
+                console.error("Error loading records:", e);
+                records = [];
+            }
+        }
+
+        // Save records to LocalStorage
+        function saveRecords() {
+            try {
+                records.sort((a, b) => new Date(b.date) - new Date(a.date));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+                updateQuickStats();
+                renderHistory();
+                if (!document.getElementById('section-reports').classList.contains('hidden')) {
+                    renderReports();
+                }
+            } catch (e) {
+                showToast("Erro ao salvar dados localmente.", "error");
+            }
+        }
+
+        // Tab Switcher Logic
+        function switchTab(tabName) {
+            const secAdd = document.getElementById('section-add');
+            const secReports = document.getElementById('section-reports');
+            const secHistory = document.getElementById('section-history');
+
+            const btnAdd = document.getElementById('tab-btn-add');
+            const btnReports = document.getElementById('tab-btn-reports');
+            const btnHistory = document.getElementById('tab-btn-history');
+
+            // Hide all
+            secAdd.classList.add('hidden');
+            secReports.classList.add('hidden');
+            secHistory.classList.add('hidden');
+
+            // Reset buttons styling
+            [btnAdd, btnReports, btnHistory].forEach(btn => {
+                btn.className = "flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 text-slate-400 hover:text-white";
+            });
+
+            // Activate chosen
+            if (tabName === 'add') {
+                secAdd.classList.remove('hidden');
+                btnAdd.className = "flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 bg-orange-600 text-white shadow";
+            } else if (tabName === 'reports') {
+                secReports.classList.remove('hidden');
+                btnReports.className = "flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 bg-orange-600 text-white shadow";
+                renderReports();
+            } else if (tabName === 'history') {
+                secHistory.classList.remove('hidden');
+                btnHistory.className = "flex-1 py-2.5 px-3 rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 bg-orange-600 text-white shadow";
+                renderHistory();
+            }
+        }
+
+        // Form Calculations (Realtime badge updates)
+        function calculateFormTotals() {
+            const ifood = parseFloat(document.getElementById('ganho-ifood').value) || 0;
+            const u99 = parseFloat(document.getElementById('ganho-99').value) || 0;
+            const uber = parseFloat(document.getElementById('ganho-uber').value) || 0;
+            const outrosG = parseFloat(document.getElementById('ganho-outros').value) || 0;
+
+            const totalGanhos = ifood + u99 + uber + outrosG;
+
+            const kmIni = parseFloat(document.getElementById('km-inicial').value) || 0;
+            const kmFin = parseFloat(document.getElementById('km-final').value) || 0;
+            const warningEl = document.getElementById('km-validation-warning');
+
+            let totalKm = 0;
+            if (kmFin > 0 || kmIni > 0) {
+                if (kmFin < kmIni) {
+                    warningEl.classList.remove('hidden');
+                } else {
+                    warningEl.classList.add('hidden');
+                    totalKm = kmFin - kmIni;
+                }
+            } else {
+                warningEl.classList.add('hidden');
+            }
+
+            const comb = parseFloat(document.getElementById('gasto-combustivel').value) || 0;
+            const alim = parseFloat(document.getElementById('gasto-alimentacao').value) || 0;
+            const manut = parseFloat(document.getElementById('gasto-manutencao').value) || 0;
+            const outrosExp = parseFloat(document.getElementById('gasto-outros').value) || 0;
+
+            const totalGastos = comb + alim + manut + outrosExp;
+
+            document.getElementById('form-total-ganhos-badge').innerText = formatCurrency(totalGanhos);
+            document.getElementById('form-total-km-badge').innerText = totalKm.toFixed(1) + ' KM';
+            document.getElementById('form-total-gastos-badge').innerText = formatCurrency(totalGastos);
+
+            return {
+                totalGanhos,
+                totalKm,
+                totalGastos,
+                lucro: totalGanhos - totalGastos,
+                custoKm: totalKm > 0 ? (totalGastos / totalKm) : 0,
+                ifood, u99, uber, outrosG, comb, alim, manut, outrosExp, kmIni, kmFin
+            };
+        }
+
+        // Step 1: Open Confirmation Modal before submitting
+        function handleFormPreSubmit(e) {
+            e.preventDefault();
+            const calc = calculateFormTotals();
+            
+            if (calc.kmFin > 0 && calc.kmFin < calc.kmIni) {
+                showToast("Corrija a quilometragem antes de continuar!", "warning");
+                return;
+            }
+
+            if (calc.totalGanhos === 0 && calc.totalGastos === 0 && calc.totalKm === 0) {
+                showToast("Preencha ao menos algum ganho, gasto ou KM!", "warning");
+                return;
+            }
+
+            const dateVal = document.getElementById('input-date').value;
+            const notesVal = document.getElementById('input-notes').value;
+
+            // Prepare object to save
+            pendingRecord = {
+                id: Date.now().toString(),
+                date: dateVal,
+                ganhos: {
+                    ifood: calc.ifood,
+                    u99: calc.u99,
+                    uber: calc.uber,
+                    outros: calc.outrosG,
+                    total: calc.totalGanhos
+                },
+                km: {
+                    inicial: calc.kmIni,
+                    final: calc.kmFin,
+                    total: calc.totalKm
+                },
+                gastos: {
+                    combustivel: calc.comb,
+                    alimentacao: calc.alim,
+                    manutencao: calc.manut,
+                    outros: calc.outrosExp,
+                    total: calc.totalGastos
+                },
+                lucro: calc.lucro,
+                custoKm: calc.custoKm,
+                notes: notesVal
+            };
+
+            // Fill Confirmation Modal Fields
+            document.getElementById('conf-date').innerText = formatDateBR(dateVal);
+            document.getElementById('conf-ganhos').innerText = formatCurrency(calc.totalGanhos);
+            document.getElementById('conf-gastos').innerText = formatCurrency(calc.totalGastos);
+            document.getElementById('conf-lucro').innerText = formatCurrency(calc.lucro);
+            document.getElementById('conf-km').innerText = calc.totalKm.toFixed(1) + ' km';
+            document.getElementById('conf-custokm').innerText = formatCurrency(calc.custoKm) + '/km';
+
+            // Show Modal
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        // Step 2: Commit save upon modal confirmation
+        function commitSaveDay() {
+            if (!pendingRecord) return;
+
+            // Check if record for this date already exists, ask/overwrite
+            const existingIdx = records.findIndex(r => r.date === pendingRecord.date);
+            if (existingIdx !== -1) {
+                records[existingIdx] = pendingRecord;
+            } else {
+                records.push(pendingRecord);
+            }
+
+            saveRecords();
+            closeConfirmModal();
+
+            // Reset form fields
+            document.getElementById('daily-form').reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('input-date').value = today;
+            calculateFormTotals();
+
+            showToast("Rodada salva com sucesso!", "success");
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('modal-confirm').classList.add('hidden');
+        }
+
+        // Quick Top Header Stats
+        function updateQuickStats() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayRecords = records.filter(r => r.date === todayStr);
+
+            let g = 0, exp = 0, km = 0;
+            todayRecords.forEach(r => {
+                g += r.ganhos.total;
+                exp += r.gastos.total;
+                km += r.km.total;
+            });
+
+            const lucro = g - exp;
+            const cKm = km > 0 ? (exp / km) : 0;
+
+            document.getElementById('quick-ganhos').innerText = formatCurrency(g);
+            document.getElementById('quick-gastos').innerText = formatCurrency(exp);
+            document.getElementById('quick-lucro').innerText = formatCurrency(lucro);
+            document.getElementById('quick-custokm').innerText = formatCurrency(cKm) + '/km';
+        }
+
+        // Render History List
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            const countEl = document.getElementById('history-count');
+            container.innerHTML = '';
+
+            countEl.innerText = `${records.length} dia(s) gravado(s)`;
+
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 bg-slate-800/40 rounded-2xl border border-slate-800">
+                        <i class="fa-solid fa-motorcycle text-4xl text-slate-600 mb-2"></i>
+                        <p class="text-slate-400 text-sm">Nenhuma rodada gravada ainda.</p>
+                        <button onclick="switchTab('add')" class="mt-3 text-xs font-bold text-orange-500 hover:underline">
+                            + Registrar primeiro dia
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            records.forEach(rec => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-800 border border-slate-700/80 rounded-2xl p-4 space-y-3";
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-extrabold text-white text-base">${formatDateBR(rec.date)}</span>
+                            ${rec.notes ? `<span class="text-xs text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-700">${rec.notes}</span>` : ''}
+                        </div>
+                        <button onclick="deleteRecord('${rec.id}')" class="text-xs text-rose-400 hover:text-rose-300 p-1" title="Excluir">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div class="bg-slate-900/60 p-2 rounded-xl">
+                            <span class="text-slate-400 block mb-0.5">Faturamento</span>
+                            <span class="font-bold text-emerald-400 text-sm">${formatCurrency(rec.ganhos.total)}</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded-xl">
+                            <span class="text-slate-400 block mb-0.5">Gastos</span>
+                            <span class="font-bold text-rose-400 text-sm">${formatCurrency(rec.gastos.total)}</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded-xl">
+                            <span class="text-slate-400 block mb-0.5">Lucro Líquido</span>
+                            <span class="font-bold text-amber-400 text-sm">${formatCurrency(rec.lucro)}</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded-xl">
+                            <span class="text-slate-400 block mb-0.5">Rodagem / Custo</span>
+                            <span class="font-bold text-cyan-400 text-sm">${rec.km.total} km <span class="text-slate-400 text-xs font-normal">(${formatCurrency(rec.custoKm)}/km)</span></span>
+                        </div>
+                    </div>
+
+                    <!-- App Breakdown Pills -->
+                    <div class="flex flex-wrap gap-1.5 pt-1 text-[11px]">
+                        ${rec.ganhos.ifood > 0 ? `<span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded-md border border-red-500/20">iFood: ${formatCurrency(rec.ganhos.ifood)}</span>` : ''}
+                        ${rec.ganhos.u99 > 0 ? `<span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-md border border-amber-500/20">99: ${formatCurrency(rec.ganhos.u99)}</span>` : ''}
+                        ${rec.ganhos.uber > 0 ? `<span class="bg-slate-700 text-slate-200 px-2 py-0.5 rounded-md">Uber: ${formatCurrency(rec.ganhos.uber)}</span>` : ''}
+                        ${rec.ganhos.outros > 0 ? `<span class="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md border border-blue-500/20">Outros: ${formatCurrency(rec.ganhos.outros)}</span>` : ''}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // Delete single record
+        function deleteRecord(id) {
+            if (confirm("Tem certeza que deseja apagar o registro desta data?")) {
+                records = records.filter(r => r.id !== id);
+                saveRecords();
+                showToast("Registro apagado.", "info");
+            }
+        }
+
+        // Set Report Period Filter
+        function setReportPeriod(period) {
+            currentPeriod = period;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.className = "period-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-300 hover:bg-slate-700";
+            });
+            document.getElementById(`period-${period}`).className = "period-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-orange-600 text-white shadow";
+            
+            renderReports();
+        }
+
+        // Render Analytics & Charts
+        function renderReports() {
+            const filtered = filterRecordsByPeriod(currentPeriod);
+
+            let totalG = 0, totalExp = 0, totalKm = 0;
+            let platformTotals = { ifood: 0, u99: 0, uber: 0, outros: 0 };
+            let expenseTotals = { combustivel: 0, alimentacao: 0, manutencao: 0, outros: 0 };
+
+            filtered.forEach(r => {
+                totalG += r.ganhos.total;
+                totalExp += r.gastos.total;
+                totalKm += r.km.total;
+
+                platformTotals.ifood += r.ganhos.ifood || 0;
+                platformTotals.u99 += r.ganhos.u99 || 0;
+                platformTotals.uber += r.ganhos.uber || 0;
+                platformTotals.outros += r.ganhos.outros || 0;
+
+                expenseTotals.combustivel += r.gastos.combustivel || 0;
+                expenseTotals.alimentacao += r.gastos.alimentacao || 0;
+                expenseTotals.manutencao += r.gastos.manutencao || 0;
+                expenseTotals.outros += r.gastos.outros || 0;
+            });
+
+            const lucroL = totalG - totalExp;
+            const cKm = totalKm > 0 ? (totalExp / totalKm) : 0;
+
+            // Best Platform
+            let bestName = "-";
+            let maxP = -1;
+            const pMap = { "iFood": platformTotals.ifood, "99": platformTotals.u99, "Uber": platformTotals.uber, "Outros": platformTotals.outros };
+            for (const [k, v] of Object.entries(pMap)) {
+                if (v > maxP && v > 0) {
+                    maxP = v;
+                    bestName = `${k} (${formatCurrency(v)})`;
+                }
+            }
+
+            // Update UI Cards
+            document.getElementById('rep-total-ganhos').innerText = formatCurrency(totalG);
+            document.getElementById('rep-total-gastos').innerText = formatCurrency(totalExp);
+            document.getElementById('rep-lucro-liquido').innerText = formatCurrency(lucroL);
+            document.getElementById('rep-total-km').innerText = totalKm.toFixed(1) + ' km';
+            document.getElementById('rep-custo-km').innerText = formatCurrency(cKm) + '/km';
+            document.getElementById('rep-best-platform').innerText = bestName;
+
+            // Render Chart.js
+            renderPlatformChart(platformTotals);
+            renderExpenseChart(expenseTotals);
+            renderTimelineChart(filtered);
+        }
+
+        // Period Filtering Helper
+        function filterRecordsByPeriod(period) {
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+
+            return records.filter(r => {
+                const rDate = new Date(r.date + 'T00:00:00');
+                if (period === 'today') {
+                    return r.date === todayStr;
+                } else if (period === 'week') {
+                    const oneWeekAgo = new Date(now);
+                    oneWeekAgo.setDate(now.getDate() - 7);
+                    return rDate >= oneWeekAgo;
+                } else if (period === 'month') {
+                    return rDate.getMonth() === now.getMonth() && rDate.getFullYear() === now.getFullYear();
+                } else if (period === 'year') {
+                    return rDate.getFullYear() === now.getFullYear();
+                }
+                return true; // 'all'
+            });
+        }
+
+        // Chart 1: Platforms Pie
+        function renderPlatformChart(totals) {
+            const ctx = document.getElementById('chart-platforms').getContext('2d');
+            if (platformChartInstance) platformChartInstance.destroy();
+
+            platformChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['iFood', '99', 'Uber', 'Outros'],
+                    datasets: [{
+                        data: [totals.ifood, totals.u99, totals.uber, totals.outros],
+                        backgroundColor: ['#ea1d2c', '#ffa100', '#475569', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        // Chart 2: Expenses Pie
+        function renderExpenseChart(totals) {
+            const ctx = document.getElementById('chart-expenses').getContext('2d');
+            if (expenseChartInstance) expenseChartInstance.destroy();
+
+            expenseChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Gasolina', 'Comida', 'Manutenção', 'Outros'],
+                    datasets: [{
+                        data: [totals.combustivel, totals.alimentacao, totals.manutencao, totals.outros],
+                        backgroundColor: ['#f59e0b', '#10b981', '#60a5fa', '#a855f7'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        // Chart 3: Financial Bar Chart Timeline
+        function renderTimelineChart(filteredData) {
+            const ctx = document.getElementById('chart-timeline').getContext('2d');
+            if (timelineChartInstance) timelineChartInstance.destroy();
+
+            const sorted = [...filteredData].reverse(); // chronological
+            const labels = sorted.map(r => formatDateShort(r.date));
+            const ganhos = sorted.map(r => r.ganhos.total);
+            const gastos = sorted.map(r => r.gastos.total);
+            const lucros = sorted.map(r => r.lucro);
+
+            timelineChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Ganhos', data: ganhos, backgroundColor: '#10b981' },
+                        { label: 'Gastos', data: gastos, backgroundColor: '#f43f5e' },
+                        { label: 'Lucro', data: lucros, backgroundColor: '#f59e0b' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#94a3b8', font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        // WhatsApp Report Exporter ("Para mandar pra galera")
+        function shareWhatsAppReport() {
+            const filtered = filterRecordsByPeriod(currentPeriod);
+            if (filtered.length === 0) {
+                showToast("Nenhum dado no período para compartilhar!", "warning");
+                return;
+            }
+
+            let g = 0, exp = 0, km = 0;
+            filtered.forEach(r => {
+                g += r.ganhos.total;
+                exp += r.gastos.total;
+                km += r.km.total;
+            });
+            const lucro = g - exp;
+            const cKm = km > 0 ? (exp / km) : 0;
+
+            let periodName = "Período";
+            if (currentPeriod === 'today') periodName = "Hoje";
+            if (currentPeriod === 'week') periodName = "Esta Semana";
+            if (currentPeriod === 'month') periodName = "Este Mês";
+
+            const text = `📊 *RELATÓRIO MOTOBOY PRO* (${periodName})\n` +
+                         `------------------------------------\n` +
+                         `💰 *Faturamento:* ${formatCurrency(g)}\n` +
+                         `⛽ *Gastos Totais:* ${formatCurrency(exp)}\n` +
+                         `💵 *Lucro Líquido:* ${formatCurrency(lucro)}\n` +
+                         `🏍️ *KM Rodados:* ${km.toFixed(1)} km\n` +
+                         `📉 *Custo por KM:* ${formatCurrency(cKm)}/km\n` +
+                         `------------------------------------\n` +
+                         `🚀 _Gerado pelo App Motoboy Pro_`;
+
+            const encoded = encodeURIComponent(text);
+            window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+        }
+
+        // Generate Demo / Sample Data for quick demonstration
+        function generateSampleData() {
+            if (records.length > 0 && !confirm("Isso vai adicionar dados de teste aos seus registros atuais. Deseja continuar?")) {
+                return;
+            }
+
+            const samples = [];
+            const today = new Date();
+
+            for (let i = 10; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+
+                const ifood = Math.floor(Math.random() * 120) + 60;
+                const u99 = Math.floor(Math.random() * 80) + 20;
+                const uber = Math.floor(Math.random() * 60);
+                const totalG = ifood + u99 + uber;
+
+                const kmIni = 45000 + ((10 - i) * 110);
+                const kmFin = kmIni + Math.floor(Math.random() * 50) + 80;
+                const totalKm = kmFin - kmIni;
+
+                const comb = Math.floor(Math.random() * 25) + 30;
+                const alim = Math.floor(Math.random() * 15) + 15;
+                const totalExp = comb + alim;
+
+                samples.push({
+                    id: Date.now().toString() + i,
+                    date: dateStr,
+                    ganhos: { ifood, u99, uber, outros: 0, total: totalG },
+                    km: { inicial: kmIni, final: kmFin, total: totalKm },
+                    gastos: { combustivel: comb, alimentacao: alim, manutencao: 0, outros: 0, total: totalExp },
+                    lucro: totalG - totalExp,
+                    custoKm: totalExp / totalKm,
+                    notes: i % 3 === 0 ? "Dia movimentado" : ""
+                });
+            }
+
+            records = [...samples, ...records];
+            saveRecords();
+            closeSettingsModal();
+            showToast("Dados de exemplo gerados!", "success");
+        }
+
+        // Export to CSV
+        function exportCSV() {
+            if (records.length === 0) {
+                showToast("Nenhum dado para exportar!", "warning");
+                return;
+            }
+
+            let csv = "Data,iFood,99,Uber,Outros,Total Ganhos,KM Inicial,KM Final,KM Total,Combustivel,Alimentacao,Manutencao,Outros Gastos,Total Gastos,Lucro Liquido,Custo KM,Notas\n";
+
+            records.forEach(r => {
+                csv += `${r.date},${r.ganhos.ifood},${r.ganhos.u99},${r.ganhos.uber},${r.ganhos.outros},${r.ganhos.total},${r.km.inicial},${r.km.final},${r.km.total},${r.gastos.combustivel},${r.gastos.alimentacao},${r.gastos.manutencao},${r.gastos.outros},${r.gastos.total},${r.lucro},${r.custoKm.toFixed(2)},"${r.notes || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `motoboy_pro_relatorio_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            showToast("Relatório CSV baixado!", "success");
+        }
+
+        // Backup Export JSON
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `motoboy_pro_backup_${new Date().toISOString().split('T')[0]}.json`);
+            dlAnchor.click();
+        }
+
+        // Restore JSON Backup
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        records = imported;
+                        saveRecords();
+                        closeSettingsModal();
+                        showToast("Backup restaurado com sucesso!", "success");
+                    } else {
+                        showToast("Arquivo JSON inválido.", "error");
+                    }
+                } catch (err) {
+                    showToast("Erro ao ler o arquivo JSON.", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Clear All Data
+        function clearAllData() {
+            if (confirm("ATENÇÃO: Deseja apagar TODOS os seus registros salvos? Esta ação não pode ser desfeita!")) {
+                records = [];
+                saveRecords();
+                closeSettingsModal();
+                showToast("Todos os dados foram apagados.", "info");
+            }
+        }
+
+        // Modal Controls
+        function openSettingsModal() { document.getElementById('modal-settings').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('modal-settings').classList.add('hidden'); }
+        function openPwaModal() { document.getElementById('modal-pwa').classList.remove('hidden'); }
+        function closePwaModal() { document.getElementById('modal-pwa').classList.add('hidden'); }
+
+        // Helper: Formatting Currency BRL
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+        }
+
+        // Helper: Format Date YYYY-MM-DD -> DD/MM/YYYY
+        function formatDateBR(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        // Helper: Short Date format DD/MM
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            return `${parts[2]}/${parts[1]}`;
+        }
+
+        // Toast Notification Helper
+        function showToast(msg, type = "info") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = msg;
+
+            if (type === "success") toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            else if (type === "warning") toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            else if (type === "error") toastIcon.className = "fa-solid fa-circle-xmark text-rose-400";
+            else toastIcon.className = "fa-solid fa-circle-info text-cyan-400";
+
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
